@@ -1,0 +1,17 @@
+{
+ "repo": "kassa-caisse",
+ "nom": "Kassa",
+ "type": "Caisse et gestion de stock",
+ "categorie": "Applications web",
+ "resume": "Logiciel de caisse tactile pour une épicerie de quartier : catalogue par familles, recherche et lecture de code-barres, ticket en cours, encaissement en espèces avec rendu monnaie, en Mobile Money ou par carte, ticket de caisse imprimable, stock décrémenté avec alertes et rapports de la journée.",
+ "fonctions": [
+  "Caisse tactile : familles, recherche sans accents, code-barres au clavier ou à la douchette",
+  "Ticket en cours avec quantités, TVA incluse et contrôle du stock disponible",
+  "Encaissement espèces (billets suggérés, pavé numérique, monnaie à rendre), Mobile Money avec contrôle du numéro, carte",
+  "Ticket de caisse 80 mm imprimable",
+  "Stock : niveau par article, seuil d'alerte, réceptions, valeur du stock",
+  "Rapports : chiffre d'affaires, panier moyen, marge brute, ventes par heure, moyens de paiement, meilleures ventes"
+ ],
+ "stack": "HTML, CSS, JavaScript natif, SVG",
+ "extra": {"Typographies": "Space Grotesk, Space Mono", "Évolutions possibles": "mode hors ligne (PWA) avec synchronisation, imprimante thermique ESC/POS, API Mobile Money réelle, multi-caisses"}
+}

@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kassa — caisse et gestion de stock</title>
+<meta name="description" content="Kassa, logiciel de caisse tactile pour commerce de proximité : encaissement, Mobile Money, ticket, stock avec alertes et rapports de ventes.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23ff5a1f'/%3E%3Cpath d='M10 8v16M10 16l9-8M13 13l7 11' stroke='%23fff' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#f2efe8;--paper:#fff;--ink:#1c1a17;--mute:#7b766c;--line:#e2ddd2;--acc:#ff5a1f;--ok:#1e8a52;--warn:#c2410c}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--ink);font:400 14px/1.4 'Space Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button,input{font:inherit;color:inherit}button{cursor:pointer}
+.mono{font-family:'Space Mono',monospace}
+header{display:flex;align-items:center;gap:18px;padding:12px 20px;background:var(--ink);color:#fff}
+.logo{font-weight:700;font-size:20px;display:flex;gap:9px;align-items:center}
+.logo i{width:26px;height:26px;border-radius:6px;background:var(--acc);display:grid;place-items:center;font-style:normal}
+nav{display:flex;gap:4px;margin-left:12px}
+nav button{background:none;border:0;color:#fff;opacity:.6;padding:8px 14px;border-radius:8px;font-weight:600}
+nav button.on{opacity:1;background:#ffffff1a}
+header .sp{margin-left:auto;display:flex;gap:16px;align-items:center;font-size:13px;opacity:.85}
+.dot{width:8px;height:8px;border-radius:50%;background:#4ade80;display:inline-block;margin-right:6px}
+.view{display:none}.view.on{display:grid}
+/* caisse */
+#v-caisse{grid-template-columns:1fr 400px;height:calc(100vh - 54px)}
+.cat{padding:16px 20px 0;display:flex;flex-direction:column;min-width:0;min-height:0}
+.bar{display:flex;gap:10px;margin-bottom:12px}
+.bar input{flex:1;border:2px solid var(--line);border-radius:10px;padding:11px 14px;background:var(--paper);font-size:15px}
+.bar input:focus{outline:0;border-color:var(--ink)}
+.chips{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto}
+.chips button{border:0;background:var(--paper);border-radius:100px;padding:8px 15px;font-weight:600;white-space:nowrap}
+.chips button.on{background:var(--ink);color:#fff}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;overflow-y:auto;padding-bottom:20px;align-content:start}
+.p{background:var(--paper);border:0;border-radius:12px;padding:10px;text-align:left;position:relative;transition:transform .1s}
+.p:active{transform:scale(.96)}
+.p .pic{height:78px;border-radius:8px;display:grid;place-items:center;margin-bottom:8px}
+.p .pic svg{height:58px}
+.p b{display:block;font-size:13.5px;line-height:1.25;min-height:34px}
+.p .pr{font-family:'Space Mono';font-size:13px;margin-top:4px}
+.p .st{position:absolute;top:14px;right:14px;font-size:10.5px;font-weight:700;background:#fff;border-radius:4px;padding:1px 5px}
+.p .st.low{background:#ffedd5;color:var(--warn)}
+.p.out{opacity:.45;pointer-events:none}
+.p.hit{animation:hit .35s}
+@keyframes hit{50%{transform:scale(.94)}}
+/* ticket */
+.cart{background:var(--paper);border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.cart .hd{padding:16px 18px;border-bottom:1px dashed var(--line);display:flex;justify-content:space-between;align-items:baseline}
+.cart .hd b{font-size:17px}
+.lines{flex:1;overflow-y:auto;padding:6px 0}
+.ln{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:9px 18px}
+.ln.new{animation:flash .6s}
+@keyframes flash{from{background:#fff1ea}}
+.ln small{display:block;color:var(--mute);font-family:'Space Mono';font-size:11.5px}
+.q{display:flex;align-items:center;border:1px solid var(--line);border-radius:8px}
+.q button{border:0;background:none;width:28px;height:28px;font-size:16px}
+.q span{min-width:20px;text-align:center;font-weight:600}
+.ln .t{font-family:'Space Mono';font-weight:700;min-width:84px;text-align:right}
+.empty{color:var(--mute);text-align:center;padding:60px 30px}
+.tot{padding:14px 18px;border-top:1px dashed var(--line);font-family:'Space Mono';font-size:13px}
+.tot div{display:flex;justify-content:space-between;padding:2px 0}
+.tot .big{font-size:24px;font-weight:700;padding-top:8px;font-family:'Space Grotesk'}
+.pay{display:grid;grid-template-columns:1fr 2fr;gap:8px;padding:0 18px 18px}
+.pay button{border:0;border-radius:12px;padding:16px;font-weight:700;font-size:16px}
+.pay .clr{background:var(--bg)}
+.pay .go{background:var(--acc);color:#fff}
+.pay .go:disabled{opacity:.4;cursor:default}
+/* paiement */
+.md{position:fixed;inset:0;background:#1c1a1788;display:none;place-items:center;z-index:30;padding:16px}
+.md.on{display:grid}
+.box{background:var(--paper);border-radius:16px;width:min(560px,100%);padding:22px;max-height:92vh;overflow:auto}
+.box h2{font-size:22px;margin-bottom:4px}
+.modes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:16px 0}
+.modes button{border:2px solid var(--line);background:none;border-radius:12px;padding:14px 8px;font-weight:700}
+.modes button.on{border-color:var(--ink);background:var(--bg)}
+.modes small{display:block;font-weight:400;color:var(--mute);font-size:12px}
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.keys button{border:0;background:var(--bg);border-radius:10px;padding:13px;font-size:18px;font-weight:600;font-family:'Space Mono'}
+.notes{display:flex;gap:6px;margin:10px 0;flex-wrap:wrap}
+.notes button{border:1px solid var(--line);background:none;border-radius:8px;padding:7px 10px;font-family:'Space Mono';font-size:12.5px}
+.disp{display:flex;justify-content:space-between;align-items:baseline;background:var(--ink);color:#fff;border-radius:12px;padding:14px 16px;margin-bottom:10px}
+.disp b{font-family:'Space Mono';font-size:24px}
+.rendu{display:flex;justify-content:space-between;padding:12px 4px;font-size:16px}
+.rendu b{font-family:'Space Mono';font-size:20px;color:var(--ok)}
+.momo{text-align:center;padding:16px 0}
+.momo input{border:2px solid var(--line);border-radius:10px;padding:12px;font-family:'Space Mono';font-size:18px;width:100%;text-align:center;margin:10px 0}
+.spin{width:44px;height:44px;border:4px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:sp 1s linear infinite;margin:14px auto}
+@keyframes sp{to{transform:rotate(360deg)}}
+.ok{width:64px;height:64px;border-radius:50%;background:var(--ok);display:grid;place-items:center;margin:8px auto;animation:hit .5s}
+.foot{display:flex;gap:8px;margin-top:14px}
+.foot button{flex:1;border:0;border-radius:12px;padding:14px;font-weight:700;background:var(--bg)}
+.foot .go{background:var(--acc);color:#fff}
+.foot .go:disabled{opacity:.4}
+/* ticket imprimé */
+.rec{width:300px;margin:0 auto;background:#fff;padding:18px 16px;font-family:'Space Mono';font-size:11.5px;box-shadow:0 10px 30px -10px rgba(0,0,0,.3);position:relative}
+.rec::after{content:"";position:absolute;left:0;right:0;bottom:-8px;height:8px;background:linear-gradient(-45deg,transparent 6px,#fff 0) 0 0/12px 8px,linear-gradient(45deg,transparent 6px,#fff 0) 0 0/12px 8px}
+.rec .c{text-align:center}.rec hr{border:0;border-top:1px dashed #999;margin:8px 0}
+.rec .r{display:flex;justify-content:space-between;gap:8px}
+/* stock & rapports */
+.pad{padding:20px;display:block!important;max-width:1280px;margin:auto}
+.view:not(.on).pad{display:none!important}
+.kp{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.kp div{background:var(--paper);border-radius:12px;padding:14px}
+.kp span{color:var(--mute);font-size:12.5px}.kp b{display:block;font-size:24px;margin-top:2px}
+.tbl{background:var(--paper);border-radius:12px;overflow:hidden}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:12px;color:var(--mute);font-weight:600;padding:11px 14px;border-bottom:1px solid var(--line)}
+td{padding:10px 14px;border-bottom:1px solid #f1eee7}
+.lvl{height:6px;border-radius:3px;background:var(--bg);width:120px;overflow:hidden}
+.lvl u{display:block;height:100%;background:var(--ok)}
+.lvl u.low{background:var(--warn)}
+.sm{border:1px solid var(--line);background:none;border-radius:8px;padding:5px 10px;font-weight:600}
+.cards{display:grid;grid-template-columns:2fr 1fr;gap:12px}
+.cardx{background:var(--paper);border-radius:12px;padding:16px}
+.cardx h3{font-size:15px;margin-bottom:12px}
+.hbar{display:grid;grid-template-columns:130px 1fr 90px;gap:10px;align-items:center;margin-bottom:9px;font-size:13px}
+.hbar i{display:block;height:14px;border-radius:0 4px 4px 0;background:var(--acc)}
+.hbar span:last-child{font-family:'Space Mono';text-align:right;font-size:12px}
+.toast{position:fixed;left:50%;top:70px;transform:translate(-50%,-10px);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;opacity:0;transition:.3s;z-index:50;font-weight:600}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media (max-width:900px){#v-caisse{grid-template-columns:1fr;height:auto}.grid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}.cart{border-left:0;border-top:1px solid var(--line)}header .sp{display:none}nav{margin-left:0}header{gap:6px;padding:10px 12px}nav button{padding:8px 9px}.logo{font-size:17px}.kp{grid-template-columns:1fr 1fr}.cards{grid-template-columns:1fr}.hm{display:none}.lvl{width:60px}.cat{padding:12px 12px 0}}
+@media print{body>*:not(#md){display:none!important}#md{position:static;background:none;display:block}.box{box-shadow:none;width:auto;padding:0}.box>*:not(#recw){display:none!important}.rec{box-shadow:none}}
+</style>
+</head>
+<body>
+<header><div class="logo"><i>K</i>Kassa</div>
+<nav><button class="on" data-v="caisse">Caisse</button><button data-v="stock">Stock</button><button data-v="rapports">Rapports</button></nav>
+<div class="sp"><span><span class="dot"></span>Caisse 1 · Épicerie Mama Ngono, Bonamoussadi</span><span class="mono" id="clock"></span></div></header>
+
+<section class="view on" id="v-caisse">
+ <div class="cat">
+  <div class="bar"><input id="q" placeholder="Rechercher un article ou scanner un code-barres…" autocomplete="off"></div>
+  <div class="chips" id="chips"></div>
+  <div class="grid" id="grid"></div>
+ </div>
+ <div class="cart">
+  <div class="hd"><b>Vente en cours</b><span class="mono" style="color:var(--mute)" id="tn"></span></div>
+  <div class="lines" id="lines"></div>
+  <div class="tot"><div><span>Articles</span><span id="nArt">0</span></div><div><span>Dont TVA 19,25 %</span><span id="tva">0 F</span></div><div class="big"><span>Total</span><span id="tot">0 F</span></div></div>
+  <div class="pay"><button class="clr" id="clr">Annuler</button><button class="go" id="go" disabled>Encaisser</button></div>
+ </div>
+</section>
+
+<section class="view pad" id="v-stock">
+ <div class="kp"><div><span>Références</span><b id="s1"></b></div><div><span>Valeur du stock (achat)</span><b id="s2"></b></div><div><span>Sous le seuil d'alerte</span><b id="s3" style="color:var(--warn)"></b></div><div><span>En rupture</span><b id="s4"></b></div></div>
+ <div class="tbl"><table><thead><tr><th>Article</th><th class="hm">Code</th><th>Stock</th><th class="hm">Niveau</th><th class="hm">Prix d'achat</th><th>Prix de vente</th><th></th></tr></thead><tbody id="stb"></tbody></table></div>
+</section>
+
+<section class="view pad" id="v-rapports">
+ <div class="kp"><div><span>Chiffre d'affaires du jour</span><b id="r1"></b></div><div><span>Tickets</span><b id="r2"></b></div><div><span>Panier moyen</span><b id="r3"></b></div><div><span>Marge brute</span><b id="r4"></b></div></div>
+ <div class="cards"><div class="cardx"><h3>Ventes par heure</h3><div id="hours"></div></div><div class="cardx"><h3>Moyens de paiement</h3><div id="modes"></div><h3 style="margin-top:20px">Meilleures ventes</h3><div id="top"></div></div></div>
+</section>
+
+<div class="md" id="md"><div class="box" id="box"></div></div>
+<div class="toast" id="toast"></div>
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const F=n=>Math.round(n).toLocaleString('fr-FR').replace(/ /g,' ')+' F';
+// pictogrammes par famille
+const PIC={
+ boisson:(c)=>`<svg viewBox="0 0 40 60"><path d="M15 2h10v8l4 6v40a3 3 0 0 1-3 3H14a3 3 0 0 1-3-3V16l4-6z" fill="${c}"/><rect x="11" y="26" width="18" height="16" fill="#fff" opacity=".8"/><rect x="15" y="1" width="10" height="5" rx="1" fill="#1c1a17"/></svg>`,
+ canette:(c)=>`<svg viewBox="0 0 40 60"><rect x="8" y="6" width="24" height="50" rx="5" fill="${c}"/><rect x="10" y="3" width="20" height="5" rx="2" fill="#bbb"/><path d="M8 24h24v12H8z" fill="#fff" opacity=".75"/></svg>`,
+ sac:(c)=>`<svg viewBox="0 0 50 60"><path d="M6 10h38l-3 46H9z" fill="${c}"/><path d="M6 10l4-6h30l4 6" fill="${c}" opacity=".7"/><rect x="14" y="26" width="22" height="14" rx="2" fill="#fff" opacity=".8"/></svg>`,
+ boite:(c)=>`<svg viewBox="0 0 50 60"><path d="M8 14l17-8 17 8v36l-17 8-17-8z" fill="${c}"/><path d="M25 22v36l17-8V14z" fill="#000" opacity=".15"/><path d="M8 14l17 8 17-8" fill="none" stroke="#fff" stroke-opacity=".5"/></svg>`,
+ savon:(c)=>`<svg viewBox="0 0 56 60"><rect x="4" y="18" width="48" height="28" rx="12" fill="${c}"/><ellipse cx="28" cy="26" rx="14" ry="4" fill="#fff" opacity=".5"/><circle cx="44" cy="12" r="5" fill="none" stroke="${c}" stroke-width="2"/><circle cx="36" cy="6" r="3" fill="none" stroke="${c}" stroke-width="2"/></svg>`,
+ bidon:(c)=>`<svg viewBox="0 0 46 60"><path d="M10 12h18l8 8v34a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4V16a4 4 0 0 1 4-4z" fill="${c}"/><rect x="12" y="4" width="12" height="9" rx="2" fill="#1c1a17"/><rect x="9" y="28" width="22" height="16" fill="#fff" opacity=".75"/></svg>`};
+const CAT=['Tout','Boissons','Épicerie','Hygiène','Petit-déjeuner'];
+const P0=[
+ ['6181000101','Eau minérale 1,5 L','Boissons','boisson','#4ba3d9',450,300,48,12],
+ ['6181000102','Jus de gingembre 1 L','Boissons','boisson','#e8a33a',1200,800,14,6],
+ ['6181000103','Soda orange 33 cl','Boissons','canette','#ff7a1a',400,260,72,24],
+ ['6181000104','Soda cola 33 cl','Boissons','canette','#c4302b',400,260,9,24],
+ ['6181000105','Jus de bissap 50 cl','Boissons','boisson','#8a1c3c',600,350,22,10],
+ ['6181000201','Riz parfumé 5 kg','Épicerie','sac','#d9b26a',5500,4300,16,5],
+ ['6181000202','Huile de palme 1 L','Épicerie','bidon','#d0461f',1500,1100,21,8],
+ ['6181000203','Sucre en morceaux 1 kg','Épicerie','boite','#9bb7d4',1000,750,30,10],
+ ['6181000204','Spaghetti 500 g','Épicerie','boite','#2f6db3',500,340,64,20],
+ ['6181000205','Concentré de tomate','Épicerie','canette','#c8331e',250,160,80,30],
+ ['6181000206','Farine de blé 1 kg','Épicerie','sac','#e7dcc4',900,640,3,8],
+ ['6181000207','Sel iodé 500 g','Épicerie','sac','#7fa0c2',200,110,0,10],
+ ['6181000301','Savon de Marseille','Hygiène','savon','#7cae5b',350,200,40,12],
+ ['6181000302','Dentifrice 75 ml','Hygiène','boite','#3d8ad6',900,600,18,6],
+ ['6181000303','Lessive en poudre 1 kg','Hygiène','sac','#2aa0a0',1800,1300,11,6],
+ ['6181000304','Eau de javel 1 L','Hygiène','bidon','#5a7d9a',700,450,5,8],
+ ['6181000401','Lait en poudre 400 g','Petit-déjeuner','boite','#3b5ea8',3200,2500,13,6],
+ ['6181000402','Chocolat en poudre 500 g','Petit-déjeuner','boite','#6b3e26',2400,1800,8,5],
+ ['6181000403','Pain de mie','Petit-déjeuner','sac','#d9a45b',800,520,15,8],
+ ['6181000404','Café moulu 250 g','Petit-déjeuner','boite','#3a2a20',1900,1400,9,5],
+];
+let P,SALES,N;
+function seed(){P=P0.map(a=>({code:a[0],nom:a[1],cat:a[2],pic:a[3],col:a[4],pv:a[5],pa:a[6],st:a[7],min:a[8]}));
+ // ventes de la journée déjà réalisées
+ SALES=[];let r=7;const rnd=()=>(r=(r*9301+49297)%233280)/233280;N=1041;
+ for(let h=7;h<new Date().getHours()&&h<21;h++){const k=Math.round(2+rnd()*5+(h===12||h===18?4:0));for(let i=0;i<k;i++){const L=[];const m=1+Math.floor(rnd()*4);for(let j=0;j<m;j++){const p=P[Math.floor(rnd()*P.length)];L.push({code:p.code,q:1+Math.floor(rnd()*3)})}SALES.push({n:N++,h,mode:['Espèces','Espèces','Mobile Money','Carte'][Math.floor(rnd()*4)],L})}}}
+try{const s=JSON.parse(localStorage.getItem('kassa'));if(s&&s.day===new Date().toDateString()){P=s.P;SALES=s.SALES;N=s.N}else seed()}catch(e){seed()}if(!P)seed();
+const save=()=>{try{localStorage.setItem('kassa',JSON.stringify({P,SALES,N,day:new Date().toDateString()}))}catch(e){}};
+const byCode=c=>P.find(p=>p.code===c);
+let cart=[],cat='Tout';
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._);t._=setTimeout(()=>t.classList.remove('on'),1800)}
+function grid(){const q=$('#q').value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+ $('#chips').innerHTML=CAT.map(c=>`<button class="${c===cat?'on':''}">${c}</button>`).join('');
+ $('#grid').innerHTML=P.filter(p=>(cat==='Tout'||p.cat===cat)&&(p.nom.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').includes(q)||p.code.includes(q))).map(p=>{const inCart=(cart.find(l=>l.code===p.code)||{q:0}).q,left=p.st-inCart;
+  return `<button class="p ${left<=0?'out':''}" data-c="${p.code}"><div class="pic" style="background:${p.col}1f">${PIC[p.pic](p.col)}</div><span class="st ${left<=p.min?'low':''}">${left<=0?'rupture':left}</span><b>${p.nom}</b><div class="pr">${F(p.pv)}</div></button>`}).join('')}
+$('#chips').onclick=e=>{if(e.target.tagName==='BUTTON'){cat=e.target.textContent;grid()}};
+$('#q').oninput=grid;
+$('#q').onkeydown=e=>{if(e.key==='Enter'){const v=$('#q').value.trim(),p=byCode(v)||P.find(p=>p.nom.toLowerCase().includes(v.toLowerCase()));if(p){add(p.code);$('#q').value='';grid()}}};
+$('#grid').onclick=e=>{const b=e.target.closest('.p');if(b){add(b.dataset.c);b.classList.remove('hit');void b.offsetWidth;b.classList.add('hit')}};
+function add(code,n=1){const p=byCode(code),l=cart.find(x=>x.code===code),have=l?l.q:0;if(have+n>p.st){toast('Stock insuffisant pour '+p.nom);return}
+ if(l)l.q+=n;else cart.push({code,q:n});ticket(code);grid()}
+window.__ajoute=add;
+function total(){return cart.reduce((a,l)=>a+byCode(l.code).pv*l.q,0)}
+function ticket(flash){$('#tn').textContent='Ticket n° '+N;
+ $('#lines').innerHTML=cart.length?cart.map(l=>{const p=byCode(l.code);return `<div class="ln ${l.code===flash?'new':''}" data-c="${l.code}"><div><b>${p.nom}</b><small>${F(p.pv)} × ${l.q}</small></div><div class="q"><button data-d="-1">−</button><span>${l.q}</span><button data-d="1">+</button></div><span class="t">${F(p.pv*l.q)}</span></div>`}).join(''):'<div class="empty">Touchez un article ou scannez un code-barres pour commencer la vente.</div>';
+ const t=total();$('#tot').textContent=F(t);$('#tva').textContent=F(t-t/1.1925);$('#nArt').textContent=cart.reduce((a,l)=>a+l.q,0);$('#go').disabled=!t}
+$('#lines').onclick=e=>{const b=e.target.closest('button[data-d]');if(!b)return;const c=b.closest('.ln').dataset.c,l=cart.find(x=>x.code===c),d=+b.dataset.d;
+ if(d>0)return add(c);l.q--;if(!l.q)cart=cart.filter(x=>x!==l);ticket();grid()};
+$('#clr').onclick=()=>{cart=[];ticket();grid()};
+// encaissement
+let mode='Espèces',recu='';
+function payBox(){const t=total();
+ $('#box').innerHTML=`<h2>Encaissement</h2><span style="color:var(--mute)">Ticket n° ${N} · ${cart.reduce((a,l)=>a+l.q,0)} articles</span>
+ <div class="modes">${[['Espèces','rendu monnaie'],['Mobile Money','Orange, MTN'],['Carte','TPE']].map(([m,s])=>`<button class="${m===mode?'on':''}" data-m="${m}">${m}<small>${s}</small></button>`).join('')}</div><div id="pz"></div>`;
+ $$('.modes button').forEach(b=>b.onclick=()=>{mode=b.dataset.m;payBox()});
+ if(mode==='Espèces'){recu='';const notes=[...new Set([t,Math.ceil(t/500)*500,Math.ceil(t/1000)*1000,Math.ceil(t/5000)*5000,10000].filter(v=>v>=t))].slice(0,4);
+  $('#pz').innerHTML=`<div class="disp"><span>À payer</span><b>${F(t)}</b></div><div style="display:flex;justify-content:space-between;padding:0 4px"><span>Reçu</span><b class="mono" id="rc">0 F</b></div>
+  <div class="notes">${notes.map(v=>`<button data-v="${v}">${F(v)}</button>`).join('')}</div>
+  <div class="keys">${[1,2,3,4,5,6,7,8,9,'00',0,'⌫'].map(k=>`<button data-k="${k}">${k}</button>`).join('')}</div>
+  <div class="rendu"><span>Monnaie à rendre</span><b id="rd">—</b></div><div class="foot"><button id="pc">Retour</button><button class="go" id="pv" disabled>Valider</button></div>`;
+  const upd=()=>{const r=+recu||0;$('#rc').textContent=F(r);$('#rd').textContent=r>=t?F(r-t):'—';$('#pv').disabled=r<t};
+  $$('.notes button').forEach(b=>b.onclick=()=>{recu=b.dataset.v;upd()});
+  $$('.keys button').forEach(b=>b.onclick=()=>{const k=b.dataset.k;recu=k==='⌫'?recu.slice(0,-1):(recu+k).slice(0,8);upd()});
+  $('#pv').onclick=()=>done(+recu-t)}
+ else if(mode==='Mobile Money'){$('#pz').innerHTML=`<div class="disp"><span>À payer</span><b>${F(t)}</b></div><div class="momo">Numéro du client<input id="tel" inputmode="numeric" placeholder="6XX XX XX XX" maxlength="12"><div id="mst" style="color:var(--mute)">Une demande de paiement sera envoyée sur le téléphone du client.</div></div><div class="foot"><button id="pc">Retour</button><button class="go" id="pv">Envoyer la demande</button></div>`;
+  $('#pv').onclick=()=>{if(!/^6\d{8}$/.test($('#tel').value.replace(/\s/g,''))){$('#mst').innerHTML='<b style="color:var(--warn)">Numéro invalide : 9 chiffres commençant par 6.</b>';return}
+   $('#mst').innerHTML='<div class="spin"></div>En attente de confirmation du client…';$('#pv').disabled=true;setTimeout(()=>done(0),2200)}}
+ else{$('#pz').innerHTML=`<div class="disp"><span>À payer</span><b>${F(t)}</b></div><div class="momo"><div class="spin"></div>Présentez la carte sur le terminal…</div><div class="foot"><button id="pc">Retour</button></div>`;setTimeout(()=>{if(mode==='Carte'&&$('#md').classList.contains('on')&&$('.spin'))done(0)},2400)}
+ $('#pc').onclick=()=>$('#md').classList.remove('on')}
+$('#go').onclick=()=>{mode='Espèces';payBox();$('#md').classList.add('on')};
+window.__payer=m=>{mode=m;payBox();$('#md').classList.add('on')};
+function done(rendu){const L=cart.map(l=>({...l}));L.forEach(l=>byCode(l.code).st-=l.q);const t=total(),n=N++;
+ SALES.push({n,h:new Date().getHours(),mode,L});save();
+ const now=new Date();
+ $('#box').innerHTML=`<div class="ok"><svg width="30" height="30" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/></svg></div><h2 style="text-align:center">Paiement accepté</h2><p style="text-align:center;color:var(--mute);margin-bottom:16px">${mode}${rendu>0?' · rendre '+F(rendu):''}</p>
+ <div id="recw"><div class="rec"><div class="c"><b style="font-size:14px">ÉPICERIE MAMA NGONO</b><br>Bonamoussadi, Douala<br>Tél. 6 99 00 00 00 · NIU M0123456789</div><hr>
+ <div class="r"><span>Ticket ${n}</span><span>${now.toLocaleDateString('fr-FR')} ${now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</span></div><hr>
+ ${L.map(l=>{const p=byCode(l.code);return `<div>${p.nom}</div><div class="r"><span>&nbsp; ${l.q} × ${F(p.pv)}</span><span>${F(p.pv*l.q)}</span></div>`}).join('')}<hr>
+ <div class="r"><span>Dont TVA 19,25 %</span><span>${F(t-t/1.1925)}</span></div><div class="r" style="font-size:15px;font-weight:700"><span>TOTAL</span><span>${F(t)}</span></div><div class="r"><span>${mode}</span><span>${F(t+rendu)}</span></div>${rendu>0?`<div class="r"><span>Rendu</span><span>${F(rendu)}</span></div>`:''}<hr>
+ <div class="c">Merci de votre visite !<br>Caissière : Line</div></div></div>
+ <div class="foot" style="margin-top:22px"><button onclick="print()">Imprimer le ticket</button><button class="go" id="nx">Nouvelle vente</button></div>`;
+ $('#nx').onclick=()=>$('#md').classList.remove('on');cart=[];ticket();grid();
+ const low=L.map(l=>byCode(l.code)).filter(p=>p.st<=p.min);if(low.length)setTimeout(()=>toast('Alerte stock : '+low.map(p=>p.nom).join(', ')),600)}
+// stock
+function stock(){$('#s1').textContent=P.length;$('#s2').textContent=F(P.reduce((a,p)=>a+p.pa*p.st,0));$('#s3').textContent=P.filter(p=>p.st>0&&p.st<=p.min).length;$('#s4').textContent=P.filter(p=>p.st<=0).length;
+ $('#stb').innerHTML=[...P].sort((a,b)=>a.st/a.min-b.st/b.min).map(p=>`<tr><td><b>${p.nom}</b><div style="color:var(--mute);font-size:12px">${p.cat}</div></td><td class="hm mono" style="font-size:12px">${p.code}</td><td><b style="color:${p.st<=p.min?'var(--warn)':''}">${p.st}</b> <span style="color:var(--mute);font-size:12px">/ seuil ${p.min}</span></td><td class="hm"><div class="lvl"><u class="${p.st<=p.min?'low':''}" style="width:${Math.min(100,p.st/(p.min*4)*100)}%"></u></div></td><td class="hm mono">${F(p.pa)}</td><td class="mono">${F(p.pv)}</td><td><button class="sm" data-c="${p.code}">+ ${p.min*3} reçus</button></td></tr>`).join('')}
+$('#stb').onclick=e=>{const b=e.target.closest('button[data-c]');if(!b)return;const p=byCode(b.dataset.c);p.st+=p.min*3;save();stock();grid();toast(`Réception enregistrée : ${p.nom} (+${p.min*3})`)};
+// rapports
+function rapports(){let ca=0,mg=0;const H={},M={},T={};SALES.forEach(s=>{let st=0;s.L.forEach(l=>{const p=byCode(l.code);st+=p.pv*l.q;mg+=(p.pv-p.pa)*l.q;T[p.nom]=(T[p.nom]||0)+p.pv*l.q});ca+=st;H[s.h]=(H[s.h]||0)+st;M[s.mode]=(M[s.mode]||0)+st});
+ $('#r1').textContent=F(ca);$('#r2').textContent=SALES.length;$('#r3').textContent=F(SALES.length?ca/SALES.length:0);$('#r4').textContent=F(mg);
+ const hm=Math.max(...Object.values(H),1);let hh='';for(let h=7;h<=21;h++)hh+=`<div class="hbar"><span class="mono">${String(h).padStart(2,'0')} h</span><span><i style="width:${(H[h]||0)/hm*100}%;${H[h]?'':'background:var(--line);width:2px'}"></i></span><span>${H[h]?F(H[h]):'—'}</span></div>`;$('#hours').innerHTML=hh;
+ $('#modes').innerHTML=Object.entries(M).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="hbar" style="grid-template-columns:100px 1fr 46px"><span>${k}</span><span><i style="width:${v/ca*100}%;background:var(--ink)"></i></span><span>${Math.round(v/ca*100)} %</span></div>`).join('');
+ const tp=Object.entries(T).sort((a,b)=>b[1]-a[1]).slice(0,5);$('#top').innerHTML=tp.map(([k,v])=>`<div class="hbar" style="grid-template-columns:1fr 84px"><span>${k}</span><span>${F(v)}</span></div>`).join('')}
+// navigation
+function view(v){$$('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));$$('.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+v));if(v==='stock')stock();if(v==='rapports')rapports();if(v==='caisse')grid()}
+$$('nav button').forEach(b=>b.onclick=()=>view(b.dataset.v));window.__vue=view;
+setInterval(()=>$('#clock').textContent=new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),1000);
+grid();ticket();
+</script>
+</body>
+</html>

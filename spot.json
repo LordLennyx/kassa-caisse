@@ -1,0 +1,82 @@
+{
+ "titre": "<em>Kassa</em>, caisse et stock",
+ "type": "Logiciel de caisse · point de vente",
+ "sous_titre": "Encaissement tactile, Mobile Money, ticket, stock et rapports",
+ "couleur": "#1c1a17",
+ "graine": 22,
+ "voix": [
+  [
+   3.3,
+   "Kassa, un logiciel de caisse pour les commerces de proximité,"
+  ],
+  [
+   8.4,
+   "on touche les articles, on encaisse en espèces ou en Mobile Money, et le ticket sort aussitôt,"
+  ],
+  [
+   17.6,
+   "le stock se met à jour, les alertes tombent, et la journée se lit en un coup d'œil."
+  ]
+ ],
+ "etapes": [
+  {
+   "t": "wait",
+   "ms": 600
+  },
+  {
+   "t": "click",
+   "sel": ".p[data-c='6181000201']",
+   "pause": 250
+  },
+  {
+   "t": "click",
+   "sel": ".p[data-c='6181000202']",
+   "pause": 250
+  },
+  {
+   "t": "click",
+   "sel": ".p[data-c='6181000103']",
+   "pause": 250
+  },
+  {
+   "t": "click",
+   "sel": ".p[data-c='6181000403']",
+   "pause": 250
+  },
+  {
+   "t": "click",
+   "sel": "#go",
+   "pause": 700
+  },
+  {
+   "t": "click",
+   "sel": ".notes button:last-child",
+   "pause": 1300
+  },
+  {
+   "t": "click",
+   "sel": "#pv",
+   "pause": 2200
+  },
+  {
+   "t": "click",
+   "sel": "#nx",
+   "pause": 500
+  },
+  {
+   "t": "click",
+   "sel": "nav button[data-v=stock]",
+   "pause": 1400
+  },
+  {
+   "t": "click",
+   "sel": "#stb button",
+   "pause": 1200
+  },
+  {
+   "t": "click",
+   "sel": "nav button[data-v=rapports]",
+   "pause": 2300
+  }
+ ]
+}
