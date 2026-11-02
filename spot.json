@@ -1,7 +1,7 @@
 {
  "titre": "<em>Kassa</em>, caisse et stock",
  "type": "Logiciel de caisse · point de vente",
- "sous_titre": "Encaissement tactile, Mobile Money, ticket, stock et rapports",
+ "sous_titre": "Encaissement tactile, paiement Wero, ticket, stock et rapports",
  "couleur": "#1c1a17",
  "graine": 22,
  "voix": [
@@ -11,7 +11,7 @@
   ],
   [
    8.4,
-   "on touche les articles, on encaisse en espèces ou en Mobile Money, et le ticket sort aussitôt,"
+   "on touche les articles, on encaisse en espèces ou par Wero, et le ticket sort aussitôt,"
   ],
   [
    17.6,

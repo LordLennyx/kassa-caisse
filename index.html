@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Kassa — caisse et gestion de stock</title>
-<meta name="description" content="Kassa, logiciel de caisse tactile pour commerce de proximité : encaissement, Mobile Money, ticket, stock avec alertes et rapports de ventes.">
+<meta name="description" content="Kassa, logiciel de caisse tactile pour commerce de proximité : encaissement, paiement mobile, ticket, stock avec alertes et rapports de ventes.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23ff5a1f'/%3E%3Cpath d='M10 8v16M10 16l9-8M13 13l7 11' stroke='%23fff' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
@@ -126,7 +126,7 @@ td{padding:10px 14px;border-bottom:1px solid #f1eee7}
 <body>
 <header><div class="logo"><i>K</i>Kassa</div>
 <nav><button class="on" data-v="caisse">Caisse</button><button data-v="stock">Stock</button><button data-v="rapports">Rapports</button></nav>
-<div class="sp"><span><span class="dot"></span>Caisse 1 · Épicerie Mama Ngono, Bonamoussadi</span><span class="mono" id="clock"></span></div></header>
+<div class="sp"><span><span class="dot"></span>Caisse 1 · Épicerie Mama Ngono, Paris 18e</span><span class="mono" id="clock"></span></div></header>
 
 <section class="view on" id="v-caisse">
  <div class="cat">
@@ -137,7 +137,7 @@ td{padding:10px 14px;border-bottom:1px solid #f1eee7}
  <div class="cart">
   <div class="hd"><b>Vente en cours</b><span class="mono" style="color:var(--mute)" id="tn"></span></div>
   <div class="lines" id="lines"></div>
-  <div class="tot"><div><span>Articles</span><span id="nArt">0</span></div><div><span>Dont TVA 19,25 %</span><span id="tva">0 F</span></div><div class="big"><span>Total</span><span id="tot">0 F</span></div></div>
+  <div class="tot"><div><span>Articles</span><span id="nArt">0</span></div><div><span>Dont TVA</span><span id="tva">0,00 €</span></div><div class="big"><span>Total</span><span id="tot">0,00 €</span></div></div>
   <div class="pay"><button class="clr" id="clr">Annuler</button><button class="go" id="go" disabled>Encaisser</button></div>
  </div>
 </section>
@@ -156,7 +156,8 @@ td{padding:10px 14px;border-bottom:1px solid #f1eee7}
 <div class="toast" id="toast"></div>
 <script>
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-const F=n=>Math.round(n).toLocaleString('fr-FR').replace(/ /g,' ')+' F';
+const F=n=>(Math.round(n*100)/100).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2}).replace(/ /g,' ')+' €';
+const TX=p=>p.cat==='Hygiène'?.2:.055,tvaOf=L=>L.reduce((a,l)=>{const p=byCode(l.code),v=p.pv*l.q;return a+v-v/(1+TX(p))},0);
 // pictogrammes par famille
 const PIC={
  boisson:(c)=>`<svg viewBox="0 0 40 60"><path d="M15 2h10v8l4 6v40a3 3 0 0 1-3 3H14a3 3 0 0 1-3-3V16l4-6z" fill="${c}"/><rect x="11" y="26" width="18" height="16" fill="#fff" opacity=".8"/><rect x="15" y="1" width="10" height="5" rx="1" fill="#1c1a17"/></svg>`,
@@ -167,32 +168,32 @@ const PIC={
  bidon:(c)=>`<svg viewBox="0 0 46 60"><path d="M10 12h18l8 8v34a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4V16a4 4 0 0 1 4-4z" fill="${c}"/><rect x="12" y="4" width="12" height="9" rx="2" fill="#1c1a17"/><rect x="9" y="28" width="22" height="16" fill="#fff" opacity=".75"/></svg>`};
 const CAT=['Tout','Boissons','Épicerie','Hygiène','Petit-déjeuner'];
 const P0=[
- ['6181000101','Eau minérale 1,5 L','Boissons','boisson','#4ba3d9',450,300,48,12],
- ['6181000102','Jus de gingembre 1 L','Boissons','boisson','#e8a33a',1200,800,14,6],
- ['6181000103','Soda orange 33 cl','Boissons','canette','#ff7a1a',400,260,72,24],
- ['6181000104','Soda cola 33 cl','Boissons','canette','#c4302b',400,260,9,24],
- ['6181000105','Jus de bissap 50 cl','Boissons','boisson','#8a1c3c',600,350,22,10],
- ['6181000201','Riz parfumé 5 kg','Épicerie','sac','#d9b26a',5500,4300,16,5],
- ['6181000202','Huile de palme 1 L','Épicerie','bidon','#d0461f',1500,1100,21,8],
- ['6181000203','Sucre en morceaux 1 kg','Épicerie','boite','#9bb7d4',1000,750,30,10],
- ['6181000204','Spaghetti 500 g','Épicerie','boite','#2f6db3',500,340,64,20],
- ['6181000205','Concentré de tomate','Épicerie','canette','#c8331e',250,160,80,30],
- ['6181000206','Farine de blé 1 kg','Épicerie','sac','#e7dcc4',900,640,3,8],
- ['6181000207','Sel iodé 500 g','Épicerie','sac','#7fa0c2',200,110,0,10],
- ['6181000301','Savon de Marseille','Hygiène','savon','#7cae5b',350,200,40,12],
- ['6181000302','Dentifrice 75 ml','Hygiène','boite','#3d8ad6',900,600,18,6],
- ['6181000303','Lessive en poudre 1 kg','Hygiène','sac','#2aa0a0',1800,1300,11,6],
- ['6181000304','Eau de javel 1 L','Hygiène','bidon','#5a7d9a',700,450,5,8],
- ['6181000401','Lait en poudre 400 g','Petit-déjeuner','boite','#3b5ea8',3200,2500,13,6],
- ['6181000402','Chocolat en poudre 500 g','Petit-déjeuner','boite','#6b3e26',2400,1800,8,5],
- ['6181000403','Pain de mie','Petit-déjeuner','sac','#d9a45b',800,520,15,8],
- ['6181000404','Café moulu 250 g','Petit-déjeuner','boite','#3a2a20',1900,1400,9,5],
+ ['6181000101','Eau minérale 1,5 L','Boissons','boisson','#4ba3d9',0.89,0.52,48,12],
+ ['6181000102','Jus de gingembre 1 L','Boissons','boisson','#e8a33a',3.9,2.4,14,6],
+ ['6181000103','Soda orange 33 cl','Boissons','canette','#ff7a1a',1.2,0.7,72,24],
+ ['6181000104','Soda cola 33 cl','Boissons','canette','#c4302b',1.2,0.7,9,24],
+ ['6181000105','Jus de bissap 50 cl','Boissons','boisson','#8a1c3c',2.5,1.4,22,10],
+ ['6181000201','Riz parfumé 5 kg','Épicerie','sac','#d9b26a',9.9,7.2,16,5],
+ ['6181000202','Huile de palme 1 L','Épicerie','bidon','#d0461f',4.9,3.3,21,8],
+ ['6181000203','Sucre en morceaux 1 kg','Épicerie','boite','#9bb7d4',1.79,1.15,30,10],
+ ['6181000204','Spaghetti 500 g','Épicerie','boite','#2f6db3',1.19,0.72,64,20],
+ ['6181000205','Concentré de tomate','Épicerie','canette','#c8331e',0.99,0.55,80,30],
+ ['6181000206','Farine de blé 1 kg','Épicerie','sac','#e7dcc4',1.29,0.8,3,8],
+ ['6181000207','Sel iodé 500 g','Épicerie','sac','#7fa0c2',0.79,0.4,0,10],
+ ['6181000301','Savon de Marseille','Hygiène','savon','#7cae5b',2.9,1.6,40,12],
+ ['6181000302','Dentifrice 75 ml','Hygiène','boite','#3d8ad6',2.49,1.5,18,6],
+ ['6181000303','Lessive en poudre 1 kg','Hygiène','sac','#2aa0a0',5.9,3.9,11,6],
+ ['6181000304','Eau de javel 1 L','Hygiène','bidon','#5a7d9a',1.49,0.85,5,8],
+ ['6181000401','Lait en poudre 400 g','Petit-déjeuner','boite','#3b5ea8',6.9,4.9,13,6],
+ ['6181000402','Chocolat en poudre 500 g','Petit-déjeuner','boite','#6b3e26',3.99,2.7,8,5],
+ ['6181000403','Pain de mie','Petit-déjeuner','sac','#d9a45b',1.89,1.1,15,8],
+ ['6181000404','Café moulu 250 g','Petit-déjeuner','boite','#3a2a20',3.49,2.4,9,5],
 ];
 let P,SALES,N;
 function seed(){P=P0.map(a=>({code:a[0],nom:a[1],cat:a[2],pic:a[3],col:a[4],pv:a[5],pa:a[6],st:a[7],min:a[8]}));
  // ventes de la journée déjà réalisées
  SALES=[];let r=7;const rnd=()=>(r=(r*9301+49297)%233280)/233280;N=1041;
- for(let h=7;h<new Date().getHours()&&h<21;h++){const k=Math.round(2+rnd()*5+(h===12||h===18?4:0));for(let i=0;i<k;i++){const L=[];const m=1+Math.floor(rnd()*4);for(let j=0;j<m;j++){const p=P[Math.floor(rnd()*P.length)];L.push({code:p.code,q:1+Math.floor(rnd()*3)})}SALES.push({n:N++,h,mode:['Espèces','Espèces','Mobile Money','Carte'][Math.floor(rnd()*4)],L})}}}
+ for(let h=7;h<new Date().getHours()&&h<21;h++){const k=Math.round(2+rnd()*5+(h===12||h===18?4:0));for(let i=0;i<k;i++){const L=[];const m=1+Math.floor(rnd()*4);for(let j=0;j<m;j++){const p=P[Math.floor(rnd()*P.length)];L.push({code:p.code,q:1+Math.floor(rnd()*3)})}SALES.push({n:N++,h,mode:['Espèces','Wero','Carte','Carte'][Math.floor(rnd()*4)],L})}}}
 try{const s=JSON.parse(localStorage.getItem('kassa'));if(s&&s.day===new Date().toDateString()){P=s.P;SALES=s.SALES;N=s.N}else seed()}catch(e){seed()}if(!P)seed();
 const save=()=>{try{localStorage.setItem('kassa',JSON.stringify({P,SALES,N,day:new Date().toDateString()}))}catch(e){}};
 const byCode=c=>P.find(p=>p.code===c);
@@ -212,7 +213,7 @@ window.__ajoute=add;
 function total(){return cart.reduce((a,l)=>a+byCode(l.code).pv*l.q,0)}
 function ticket(flash){$('#tn').textContent='Ticket n° '+N;
  $('#lines').innerHTML=cart.length?cart.map(l=>{const p=byCode(l.code);return `<div class="ln ${l.code===flash?'new':''}" data-c="${l.code}"><div><b>${p.nom}</b><small>${F(p.pv)} × ${l.q}</small></div><div class="q"><button data-d="-1">−</button><span>${l.q}</span><button data-d="1">+</button></div><span class="t">${F(p.pv*l.q)}</span></div>`}).join(''):'<div class="empty">Touchez un article ou scannez un code-barres pour commencer la vente.</div>';
- const t=total();$('#tot').textContent=F(t);$('#tva').textContent=F(t-t/1.1925);$('#nArt').textContent=cart.reduce((a,l)=>a+l.q,0);$('#go').disabled=!t}
+ const t=total();$('#tot').textContent=F(t);$('#tva').textContent=F(tvaOf(cart));$('#nArt').textContent=cart.reduce((a,l)=>a+l.q,0);$('#go').disabled=!t}
 $('#lines').onclick=e=>{const b=e.target.closest('button[data-d]');if(!b)return;const c=b.closest('.ln').dataset.c,l=cart.find(x=>x.code===c),d=+b.dataset.d;
  if(d>0)return add(c);l.q--;if(!l.q)cart=cart.filter(x=>x!==l);ticket();grid()};
 $('#clr').onclick=()=>{cart=[];ticket();grid()};
@@ -220,19 +221,19 @@ $('#clr').onclick=()=>{cart=[];ticket();grid()};
 let mode='Espèces',recu='';
 function payBox(){const t=total();
  $('#box').innerHTML=`<h2>Encaissement</h2><span style="color:var(--mute)">Ticket n° ${N} · ${cart.reduce((a,l)=>a+l.q,0)} articles</span>
- <div class="modes">${[['Espèces','rendu monnaie'],['Mobile Money','Orange, MTN'],['Carte','TPE']].map(([m,s])=>`<button class="${m===mode?'on':''}" data-m="${m}">${m}<small>${s}</small></button>`).join('')}</div><div id="pz"></div>`;
+ <div class="modes">${[['Espèces','rendu monnaie'],['Wero','paiement mobile'],['Carte','sans contact']].map(([m,s])=>`<button class="${m===mode?'on':''}" data-m="${m}">${m}<small>${s}</small></button>`).join('')}</div><div id="pz"></div>`;
  $$('.modes button').forEach(b=>b.onclick=()=>{mode=b.dataset.m;payBox()});
- if(mode==='Espèces'){recu='';const notes=[...new Set([t,Math.ceil(t/500)*500,Math.ceil(t/1000)*1000,Math.ceil(t/5000)*5000,10000].filter(v=>v>=t))].slice(0,4);
-  $('#pz').innerHTML=`<div class="disp"><span>À payer</span><b>${F(t)}</b></div><div style="display:flex;justify-content:space-between;padding:0 4px"><span>Reçu</span><b class="mono" id="rc">0 F</b></div>
-  <div class="notes">${notes.map(v=>`<button data-v="${v}">${F(v)}</button>`).join('')}</div>
+ if(mode==='Espèces'){recu='';const notes=[...new Set([t,Math.ceil(t/5)*5,Math.ceil(t/10)*10,Math.ceil(t/20)*20,50,100].filter(v=>v>=t))].slice(0,4);
+  $('#pz').innerHTML=`<div class="disp"><span>À payer</span><b>${F(t)}</b></div><div style="display:flex;justify-content:space-between;padding:0 4px"><span>Reçu</span><b class="mono" id="rc">0,00 €</b></div>
+  <div class="notes">${notes.map(v=>`<button data-v="${Math.round(v*100)}">${F(v)}</button>`).join('')}</div>
   <div class="keys">${[1,2,3,4,5,6,7,8,9,'00',0,'⌫'].map(k=>`<button data-k="${k}">${k}</button>`).join('')}</div>
   <div class="rendu"><span>Monnaie à rendre</span><b id="rd">—</b></div><div class="foot"><button id="pc">Retour</button><button class="go" id="pv" disabled>Valider</button></div>`;
-  const upd=()=>{const r=+recu||0;$('#rc').textContent=F(r);$('#rd').textContent=r>=t?F(r-t):'—';$('#pv').disabled=r<t};
+  const upd=()=>{const r=(+recu||0)/100;$('#rc').textContent=F(r);$('#rd').textContent=r>=t?F(r-t):'—';$('#pv').disabled=r<t};
   $$('.notes button').forEach(b=>b.onclick=()=>{recu=b.dataset.v;upd()});
   $$('.keys button').forEach(b=>b.onclick=()=>{const k=b.dataset.k;recu=k==='⌫'?recu.slice(0,-1):(recu+k).slice(0,8);upd()});
-  $('#pv').onclick=()=>done(+recu-t)}
- else if(mode==='Mobile Money'){$('#pz').innerHTML=`<div class="disp"><span>À payer</span><b>${F(t)}</b></div><div class="momo">Numéro du client<input id="tel" inputmode="numeric" placeholder="6XX XX XX XX" maxlength="12"><div id="mst" style="color:var(--mute)">Une demande de paiement sera envoyée sur le téléphone du client.</div></div><div class="foot"><button id="pc">Retour</button><button class="go" id="pv">Envoyer la demande</button></div>`;
-  $('#pv').onclick=()=>{if(!/^6\d{8}$/.test($('#tel').value.replace(/\s/g,''))){$('#mst').innerHTML='<b style="color:var(--warn)">Numéro invalide : 9 chiffres commençant par 6.</b>';return}
+  $('#pv').onclick=()=>done(Math.round(+recu-t*100)/100)}
+ else if(mode==='Wero'){$('#pz').innerHTML=`<div class="disp"><span>À payer</span><b>${F(t)}</b></div><div class="momo">Numéro du client<input id="tel" inputmode="numeric" placeholder="06 12 34 56 78" maxlength="14"><div id="mst" style="color:var(--mute)">Une demande de paiement Wero sera envoyée sur le téléphone du client.</div></div><div class="foot"><button id="pc">Retour</button><button class="go" id="pv">Envoyer la demande</button></div>`;
+  $('#pv').onclick=()=>{if(!/^0[67]\d{8}$/.test($('#tel').value.replace(/\s/g,''))){$('#mst').innerHTML='<b style="color:var(--warn)">Numéro invalide : 10 chiffres commençant par 06 ou 07.</b>';return}
    $('#mst').innerHTML='<div class="spin"></div>En attente de confirmation du client…';$('#pv').disabled=true;setTimeout(()=>done(0),2200)}}
  else{$('#pz').innerHTML=`<div class="disp"><span>À payer</span><b>${F(t)}</b></div><div class="momo"><div class="spin"></div>Présentez la carte sur le terminal…</div><div class="foot"><button id="pc">Retour</button></div>`;setTimeout(()=>{if(mode==='Carte'&&$('#md').classList.contains('on')&&$('.spin'))done(0)},2400)}
  $('#pc').onclick=()=>$('#md').classList.remove('on')}
@@ -242,10 +243,10 @@ function done(rendu){const L=cart.map(l=>({...l}));L.forEach(l=>byCode(l.code).s
  SALES.push({n,h:new Date().getHours(),mode,L});save();
  const now=new Date();
  $('#box').innerHTML=`<div class="ok"><svg width="30" height="30" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/></svg></div><h2 style="text-align:center">Paiement accepté</h2><p style="text-align:center;color:var(--mute);margin-bottom:16px">${mode}${rendu>0?' · rendre '+F(rendu):''}</p>
- <div id="recw"><div class="rec"><div class="c"><b style="font-size:14px">ÉPICERIE MAMA NGONO</b><br>Bonamoussadi, Douala<br>Tél. 6 99 00 00 00 · NIU M0123456789</div><hr>
+ <div id="recw"><div class="rec"><div class="c"><b style="font-size:14px">ÉPICERIE MAMA NGONO</b><br>12 rue Myrha, 75018 Paris<br>Tél. 01 42 00 00 00 · SIRET 912 345 678 00017</div><hr>
  <div class="r"><span>Ticket ${n}</span><span>${now.toLocaleDateString('fr-FR')} ${now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</span></div><hr>
  ${L.map(l=>{const p=byCode(l.code);return `<div>${p.nom}</div><div class="r"><span>&nbsp; ${l.q} × ${F(p.pv)}</span><span>${F(p.pv*l.q)}</span></div>`}).join('')}<hr>
- <div class="r"><span>Dont TVA 19,25 %</span><span>${F(t-t/1.1925)}</span></div><div class="r" style="font-size:15px;font-weight:700"><span>TOTAL</span><span>${F(t)}</span></div><div class="r"><span>${mode}</span><span>${F(t+rendu)}</span></div>${rendu>0?`<div class="r"><span>Rendu</span><span>${F(rendu)}</span></div>`:''}<hr>
+ <div class="r"><span>Dont TVA (5,5 % / 20 %)</span><span>${F(tvaOf(L))}</span></div><div class="r" style="font-size:15px;font-weight:700"><span>TOTAL</span><span>${F(t)}</span></div><div class="r"><span>${mode}</span><span>${F(t+rendu)}</span></div>${rendu>0?`<div class="r"><span>Rendu</span><span>${F(rendu)}</span></div>`:''}<hr>
  <div class="c">Merci de votre visite !<br>Caissière : Line</div></div></div>
  <div class="foot" style="margin-top:22px"><button onclick="print()">Imprimer le ticket</button><button class="go" id="nx">Nouvelle vente</button></div>`;
  $('#nx').onclick=()=>$('#md').classList.remove('on');cart=[];ticket();grid();
